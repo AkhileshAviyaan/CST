@@ -1,5 +1,4 @@
-﻿using Conversion.Parameter;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
@@ -7,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Conversion.Utility
+namespace CST.Utility
 {
 	public class Matrix
 	{

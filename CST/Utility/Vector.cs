@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Conversion.Utility
+namespace CST.Utility
 {
 	/// <summary>
 	/// A Column Matrix of arbitrary size

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Conversion.Utility
+namespace CST.Utility
 {
 	internal static class MathHelp
 	{
