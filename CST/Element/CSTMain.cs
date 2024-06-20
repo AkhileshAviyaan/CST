@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -17,6 +18,12 @@ namespace CST.Element
 		public MaterialProperties MaterialProp { get; set; }
 		public Matrix K { get; set; }
 		public Matrix F { get; set; }
+		public Matrix U { get; set; }
+		public Matrix BodyForceMatrix { get; set; }
+		public Matrix TractionMatrix { get; set; }
+		public Matrix ReactionMatrix { get; set; }
+		public Matrix Stress { get; set; }
+		public Matrix B { get; set; }
 		public Matrix D { get; set; }
 		public CSTMain()
 		{
@@ -25,7 +32,7 @@ namespace CST.Element
 			MaterialProp = new MaterialProperties();
 			K = new Matrix(6, 6);
 			F = new Matrix(6, 1);
-			D = new Matrix(6, 1);
+			U = new Matrix(6, 1);
 		}
 		void ComputeForce()
 		{
@@ -55,12 +62,26 @@ namespace CST.Element
 				node.BodyForceY = -MaterialProp.Gamma * Area * MaterialProp.t / 3;
 			}
 		}
+		void BodyAndTractionForceMatrix()
+		{
+			BodyForceMatrix = new Matrix(6, 1);
+			TractionMatrix = new Matrix(6, 1);
+			for (int i = 0; i < Nodes.Count; i++)
+			{
+				BodyForceMatrix.Data[2 * i - 1, 0] = Nodes[i].BodyForceX;
+				BodyForceMatrix.Data[2 * i, 0] = Nodes[i].BodyForceY;
+				TractionMatrix.Data[2 * i - 1, 0] = Nodes[i].nodalTractionForce.Fx;
+				TractionMatrix.Data[2 * i, 0] = Nodes[i].nodalTractionForce.Fy;
+				ReactionMatrix.Data[2 * i - 1, 0] = Nodes[i].reactionForce.Fx;
+				ReactionMatrix.Data[2 * i, 0] = Nodes[i].reactionForce.Fy;
+			}
+		}
 		void ComputeStiffnessMatrix()
 		{
 
-			//Calculate D Matrix
+			//Calculate U Matrix
 			var mP = this.MaterialProp;
-			Matrix D = new Matrix(3, 3);
+			D = new Matrix(3, 3);
 			double firstExpD = mP.E / (1 - Pow(mP.Rho, 2));
 			D.Data[0, 0] = D.Data[1, 1] = 1;
 			D.Data[0, 1] = D.Data[1, 0] = mP.Rho;
@@ -71,7 +92,7 @@ namespace CST.Element
 			//Calculate B Matrix
 			var n = Nodes;
 			double firstExpB = 1 / 2 * mP.Area;
-			Matrix B = new Matrix(3, 6);
+			B = new Matrix(3, 6);
 			double y23 = diff(n[1].Y, n[2].Y);
 			double y31 = diff(n[2].Y, n[0].Y);
 			double y12 = diff(n[0].Y, n[1].Y);
@@ -89,17 +110,14 @@ namespace CST.Element
 		void CalculateDisplacement()
 		{
 
+			this.F = this.ReactionMatrix + this.TractionMatrix + this.BodyForceMatrix;
 			//Initilize node number and compute displacement matrix
 			int count = 0;
 			foreach (var node in Nodes)
 			{
 				node.Id = count;
-				this.F.Data[node.Id * 2 - 1, 1] = node.NodalLoad.Fx + node.BodyForceX + node.nodalTractionForce.Fx;
-				this.F.Data[node.Id * 2, 1] = node.NodalLoad.Fy + node.BodyForceY + node.nodalTractionForce.Fx;
-				this.
-					D.Data[node.Id * 2 - 1, 1] = 0;
-				this.
-					D.Data[node.Id * 2, 1] = 0;
+				this.U.Data[node.Id * 2 - 1, 1] = 0;
+				this.U.Data[node.Id * 2, 1] = 0;
 				count++;
 			}
 
@@ -130,14 +148,22 @@ namespace CST.Element
 			Matrix rK = new Matrix(usefulRC.Count, usefulRC.Count);
 			for (int i = 0; i < usefulRC.Count; i++)
 			{
+				rF.Data[i, 0] = this.F.Data[usefulRC[i], 0];
 				for (int j = 0; j < usefulRC.Count; j++)
 				{
 					rK.Data[i, j] = this.K.Data[usefulRC[i], usefulRC[j]];
-					rF.Data[i, j] = this.F.Data[usefulRC[i], usefulRC[j]];
+
 				}
 			}
+			Matrix disResult = rK.Inverse * rF;
+			for (int i = 0; i < usefulRC.Count; i++)
+			{
+				U.Data[i, 0] = this.F.Data[usefulRC[i], 0];
+			}
+		}
+		void CalculateStress()
+		{
+			this.Stress = this.D * this.B * this.U;
 		}
 	}
-
-
 }
