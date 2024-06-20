@@ -18,9 +18,10 @@ namespace CST.Progarm
 			n2.NodalSupport = new NodalSupport(ENodalSupport.Hinge);
 			cst.Nodes.AddRange(nodes);
 
-			TractionForce tractionForce=new TractionForce(n2,n3,0,360,30);
+			cst.TractionForce.Add(new TractionForce(n2,n3,0,360,30));
+			cst.MaterialProp = new MaterialProperties(30e6,0.3,460,0.3);
 
-
+			cst.Solve();
 			
 
 		}

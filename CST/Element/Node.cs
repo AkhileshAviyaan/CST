@@ -37,9 +37,11 @@ namespace CST.Element
 		}
 		public Node()
 		{
+			nodalTractionForce=new NodalTractionForce();
+			reactionForce=new ReactionForce();
 
 		}
-		public Node(double x, double y, string label)
+		public Node(double x, double y, string label):this()
 		{
 			X = x;
 			Y = y;

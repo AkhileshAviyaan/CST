@@ -48,9 +48,8 @@ namespace CST.Loads
 		/// <param name="angle"></param>
 		public TractionForce(Node n1, Node n2, double f1, double f2, LoadDirection ld, double angle) : this(n1, n2, f1, f2)
 		{
-			Angle = angle;
+			Angle = angle*PI/180;
 			loadDirection = ld;
-			UpdateTractionForceInNode();
 		}
 
 		/// <summary>
@@ -63,7 +62,7 @@ namespace CST.Loads
 		/// <param name="angle"></param>
 		public TractionForce(Node n1, Node n2, double f1, double f2, double angle) : this(n1, n2, f1, f2)
 		{
-			Angle = angle;
+			Angle = angle * PI / 180;
 			loadDirection = LoadDirection.GlobalDirection;
 		}
 

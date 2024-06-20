@@ -34,6 +34,14 @@ namespace CST.Element
 			F = new Matrix(6, 1);
 			U = new Matrix(6, 1);
 		}
+		public void Solve()
+		{
+			ComputeForce();
+			BodyAndTractionForceMatrix();
+			ComputeStiffnessMatrix();
+			CalculateDisplacement();
+			CalculateStress();
+		}
 		void ComputeForce()
 		{
 			ComputeTractionForce();
@@ -41,15 +49,19 @@ namespace CST.Element
 		}
 		void ComputeTractionForce()
 		{
-			foreach (var tf in TractionForce)
+			 foreach (var tf in TractionForce)
 			{
 				double firstExpression = MaterialProp.t * tf.Length / 6;
 				double cos0 = Cos(tf.Angle);
 				double sin0 = Sin(tf.Angle);
+				if (tf.StartNode.nodalTractionForce is not null)
+				{
 				tf.StartNode.nodalTractionForce.Fx = 2 * tf.F1 * cos0 + tf.F2 * cos0;
 				tf.StartNode.nodalTractionForce.Fy = 2 * tf.F1 * sin0 + tf.F2 * sin0;
 				tf.EndNode.nodalTractionForce.Fx = tf.F1 * cos0 + 2 * tf.F2 * cos0;
 				tf.EndNode.nodalTractionForce.Fy = tf.F1 * sin0 + 2 * tf.F2 * sin0;
+				}
+				
 			}
 		}
 		void ComputeBodyForce()
@@ -66,14 +78,22 @@ namespace CST.Element
 		{
 			BodyForceMatrix = new Matrix(6, 1);
 			TractionMatrix = new Matrix(6, 1);
+			ReactionMatrix = new Matrix(6, 1);
 			for (int i = 0; i < Nodes.Count; i++)
 			{
-				BodyForceMatrix.Data[2 * i - 1, 0] = Nodes[i].BodyForceX;
-				BodyForceMatrix.Data[2 * i, 0] = Nodes[i].BodyForceY;
-				TractionMatrix.Data[2 * i - 1, 0] = Nodes[i].nodalTractionForce.Fx;
-				TractionMatrix.Data[2 * i, 0] = Nodes[i].nodalTractionForce.Fy;
-				ReactionMatrix.Data[2 * i - 1, 0] = Nodes[i].reactionForce.Fx;
-				ReactionMatrix.Data[2 * i, 0] = Nodes[i].reactionForce.Fy;
+				BodyForceMatrix.Data[2 * i, 0] = Nodes[i].BodyForceX;
+				BodyForceMatrix.Data[2 * i + 1, 0] = Nodes[i].BodyForceY;
+				if (Nodes[i].nodalTractionForce is not null)
+				{
+					TractionMatrix.Data[2 * i, 0] = Nodes[i].nodalTractionForce.Fx;
+					TractionMatrix.Data[2 * i + 1, 0] = Nodes[i].nodalTractionForce.Fy;
+				}
+				if (Nodes[i].reactionForce is not null)
+				{
+					ReactionMatrix.Data[2 * i, 0] = Nodes[i].reactionForce.Fx;
+					ReactionMatrix.Data[2 * i + 1, 0] = Nodes[i].reactionForce.Fy;
+				}
+
 			}
 		}
 		void ComputeStiffnessMatrix()
@@ -116,8 +136,8 @@ namespace CST.Element
 			foreach (var node in Nodes)
 			{
 				node.Id = count;
-				this.U.Data[node.Id * 2 - 1, 1] = 0;
-				this.U.Data[node.Id * 2, 1] = 0;
+				this.U.Data[node.Id * 2, 0] = 0;
+				this.U.Data[node.Id * 2 + 1, 0] = 0;
 				count++;
 			}
 
@@ -127,8 +147,8 @@ namespace CST.Element
 			{
 				if (node.NodalSupport is null)
 				{
-					usefulRC.Add(node.Id * 2 - 1);
 					usefulRC.Add(node.Id * 2);
+					usefulRC.Add(node.Id * 2 + 1);
 				}
 				else
 				{
