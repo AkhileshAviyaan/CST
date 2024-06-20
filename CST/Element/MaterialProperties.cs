@@ -27,6 +27,6 @@ namespace CST.Element
             Gamma = gamma;
             Rho = rho;
         }
-
+        public double Area { get; set; }
     }
 }

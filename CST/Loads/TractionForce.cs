@@ -12,7 +12,7 @@ namespace CST.Loads
 	{
 		public Node StartNode { get; set; }
 		public Node EndNode { get; set; }
-
+		public double Length => Sqrt(Pow(StartNode.X - EndNode.X, 2) + Pow(StartNode.Y - EndNode.Y, 2));
 		public double F1 { get; set; }
 		public double F2 { get; set; }
 		public double Angle { get; set; }
@@ -33,6 +33,8 @@ namespace CST.Loads
 			F1 = f1;
 			F2 = f2;
 			Angle = 0;
+			loadDirection = LoadDirection.GlobalDirection;
+
 		}
 
 		/// <summary>
@@ -48,6 +50,23 @@ namespace CST.Loads
 		{
 			Angle = angle;
 			loadDirection = ld;
+			UpdateTractionForceInNode();
 		}
+
+		/// <summary>
+		/// Initialize with default LoadDirection
+		/// </summary>
+		/// <param name="n1"></param>
+		/// <param name="n2"></param>
+		/// <param name="f1"></param>
+		/// <param name="f2"></param>
+		/// <param name="angle"></param>
+		public TractionForce(Node n1, Node n2, double f1, double f2, double angle) : this(n1, n2, f1, f2)
+		{
+			Angle = angle;
+			loadDirection = LoadDirection.GlobalDirection;
+		}
+
+
 	}
 }

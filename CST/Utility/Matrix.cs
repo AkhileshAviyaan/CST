@@ -13,14 +13,12 @@ namespace CST.Utility
 		public int RowCount;
 		public int ColumnCount;
 		public double[,] Data;
-		public DMS[,] Dms;
 
 		public Matrix(int row, int column)
 		{
 			Data = new double[row, column];
 			RowCount = row;
 			ColumnCount = column;
-			Dms = new DMS[row, column - 1];
 		}
 
 		public Matrix(Matrix gK)
