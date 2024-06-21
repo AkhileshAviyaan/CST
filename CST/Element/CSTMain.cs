@@ -23,6 +23,7 @@ namespace CST.Element
 		public Matrix TractionMatrix { get; set; }
 		public Matrix ReactionMatrix { get; set; }
 		public Matrix Stress { get; set; }
+		public Matrix Strain { get; set; }
 		public Matrix B { get; set; }
 		public Matrix D { get; set; }
 		public CSTMain()
@@ -49,24 +50,27 @@ namespace CST.Element
 		}
 		void ComputeTractionForce()
 		{
-			 foreach (var tf in TractionForce)
+			foreach (var tf in TractionForce)
 			{
-				double firstExpression = MaterialProp.t * tf.Length / 6;
+				double firstExp = MaterialProp.t * tf.Length / 6;
 				double cos0 = Cos(tf.Angle);
 				double sin0 = Sin(tf.Angle);
 				if (tf.StartNode.nodalTractionForce is not null)
 				{
-				tf.StartNode.nodalTractionForce.Fx = 2 * tf.F1 * cos0 + tf.F2 * cos0;
-				tf.StartNode.nodalTractionForce.Fy = 2 * tf.F1 * sin0 + tf.F2 * sin0;
-				tf.EndNode.nodalTractionForce.Fx = tf.F1 * cos0 + 2 * tf.F2 * cos0;
-				tf.EndNode.nodalTractionForce.Fy = tf.F1 * sin0 + 2 * tf.F2 * sin0;
+					tf.StartNode.nodalTractionForce.Fx = firstExp*(2 * tf.F1 * cos0 + tf.F2 * cos0);
+					tf.StartNode.nodalTractionForce.Fy = firstExp*(2 * tf.F1 * sin0 + tf.F2 * sin0);
+					tf.EndNode.nodalTractionForce.Fx = firstExp*(tf.F1 * cos0 + 2 * tf.F2 * cos0);
+					tf.EndNode.nodalTractionForce.Fy = firstExp*(tf.F1 * sin0 + 2 * tf.F2 * sin0);
 				}
-				
+
 			}
 		}
 		void ComputeBodyForce()
 		{
-			double Area = 1 / 2 * Abs(Nodes[0].X * (Nodes[1].Y - Nodes[2].Y) + Nodes[1].X * (Nodes[2].Y - Nodes[0].Y) + Nodes[2].X * (Nodes[0].Y - Nodes[1].Y));
+			double A1 = Nodes[0].X * (Nodes[1].Y - Nodes[2].Y);
+			double A2 = Nodes[1].X * (Nodes[2].Y - Nodes[0].Y);
+			double A3 = Nodes[2].X * (Nodes[0].Y - Nodes[1].Y);
+			double Area = 1.0 / 2 * Abs(A1 + A2 + A3);
 			MaterialProp.Area = Area;
 			foreach (var node in Nodes)
 			{
@@ -106,12 +110,13 @@ namespace CST.Element
 			D.Data[0, 0] = D.Data[1, 1] = 1;
 			D.Data[0, 1] = D.Data[1, 0] = mP.Rho;
 			D.Data[0, 2] = D.Data[1, 2] = D.Data[2, 0] = D.Data[2, 1] = 0;
+			D.Data[2, 2] = (1 - mP.Rho) / 2;
 			D = firstExpD * D;
 
 
 			//Calculate B Matrix
 			var n = Nodes;
-			double firstExpB = 1 / 2 * mP.Area;
+			double firstExpB = 1.0 / (2 * mP.Area);
 			B = new Matrix(3, 6);
 			double y23 = diff(n[1].Y, n[2].Y);
 			double y31 = diff(n[2].Y, n[0].Y);
@@ -124,7 +129,7 @@ namespace CST.Element
 			B = firstExpB * B;
 
 
-			this.K = mP.t * mP.Area * B.Transpose * D * B;
+			this.K = mP.t * mP.Area * (B.Transpose * D * B);
 		}
 		double diff(double a, double b) => a - b;
 		void CalculateDisplacement()
@@ -178,11 +183,14 @@ namespace CST.Element
 			Matrix disResult = rK.Inverse * rF;
 			for (int i = 0; i < usefulRC.Count; i++)
 			{
-				U.Data[i, 0] = this.F.Data[usefulRC[i], 0];
+				U.Data[usefulRC[i], 0] = disResult.Data[i, 0];
 			}
 		}
 		void CalculateStress()
 		{
+
+			this.Strain = this.B * this.U;
+
 			this.Stress = this.D * this.B * this.U;
 		}
 	}
